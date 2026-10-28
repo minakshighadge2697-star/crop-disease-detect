@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Crop Disease Detection</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            color: #263238;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1050px;
+            margin: 35px auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #1b5e20;
+            font-size: 38px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 17px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 18px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #2e7d32;
+            margin-bottom: 22px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #c8e6c9;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #43a047;
+        }
+
+        .upload-area {
+            border: 2px dashed #66bb6a;
+            border-radius: 15px;
+            padding: 35px 20px;
+            text-align: center;
+            background: #fafffa;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            background: #e8f5e9;
+            border-color: #2e7d32;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .upload-area h3 {
+            color: #2e7d32;
+            margin-bottom: 8px;
+        }
+
+        .upload-area p {
+            color: #777;
+            margin-bottom: 10px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .browse-btn {
+            display: inline-block;
+            background: #43a047;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .browse-btn:hover {
+            background: #2e7d32;
+        }
+
+        .file-name {
+            margin-top: 12px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .preview-section {
+            display: none;
+            margin-top: 25px;
+        }
+
+        .preview-section h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+        }
+
+        .preview-container {
+            width: 100%;
+            min-height: 250px;
+            max-height: 450px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            max-height: 450px;
+            object-fit: contain;
+        }
+
+        .analyze-btn {
+            width: 100%;
+            border: none;
+            background: #1b5e20;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .analyze-btn:hover {
+            background: #2e7d32;
+        }
+
+        .analyze-btn:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .spinner {
+            width: 45px;
+            height: 45px;
+            border: 5px solid #c8e6c9;
+            border-top: 5px solid #2e7d32;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: auto;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .result {
+            display: none;
+        }
+
+        .result-header {
+            background: linear-gradient(135deg, #2e7d32, #43a047);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .result-header h2 {
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .result-box {
+            background: #f1f8e9;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 5px solid #43a047;
+        }
+
+        .result-box span {
+            display: block;
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .result-box strong {
+            color: #1b5e20;
+            font-size: 18px;
+        }
+
+        .info-box {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 18px;
+        }
+
+        .info-box h3 {
+            color: #2e7d32;
+            margin-bottom: 12px;
+        }
+
+        .info-box ul {
+            padding-left: 20px;
+        }
+
+        .info-box li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .footer {
+            text-align: center;
+            color: #777;
+            padding: 20px;
+        }
+
+        @media(max-width: 700px) {
+
+            .container {
+                width: 95%;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+
+        <h1>🌱 Crop Disease Detection</h1>
+
+        <p>
+            Upload a crop leaf image and identify possible diseases.
+        </p>
+
+    </div>
+
+
+    <!-- MAIN CARD -->
+    <div class="card">
+
+        <h2>🔍 Identify Crop Disease</h2>
+
+
+        <!-- CROP -->
+        <div class="form-group">
+
+            <label for="cropSelect">
+                🌾 Select Crop
+            </label>
+
+            <select id="cropSelect">
+
+                <option value="Tomato">🍅 Tomato</option>
+
+                <option value="Potato">🥔 Potato</option>
+
+                <option value="Corn">🌽 Corn</option>
+
+                <option value="Apple">🍎 Apple</option>
+
+                <option value="Grape">🍇 Grape</option>
+
+                <option value="Chilli">🌶️ Chilli</option>
+
+                <option value="Cucumber">🥒 Cucumber</option>
+
+                <option value="Brinjal">🍆 Brinjal</option>
+
+                <option value="Mango">🥭 Mango</option>
+
+                <option value="Rice">🍚 Rice</option>
+
+                <option value="Wheat">🌾 Wheat</option>
+
+                <option value="Soybean">🫘 Soybean</option>
+
+                <option value="Onion">🧅 Onion</option>
+
+                <option value="Cotton">🌱 Cotton</option>
+
+                <option value="Banana">🍌 Banana</option>
+
+            </select>
+
+        </div>
+
+
+        <!-- UPLOAD -->
+        <div class="form-group">
+
+            <label>
+                📷 Upload Leaf Image
+            </label>
+
+            <div class="upload-area" id="uploadArea">
+
+                <div class="upload-icon">
+                    📸
+                </div>
+
+                <h3>
+                    Upload Crop Leaf
+                </h3>
+
+                <p>
+                    Drag & Drop your image here
+                </p>
+
+                <p>
+                    or
+                </p>
+
+                <label
+                    for="fileInput"
+                    class="browse-btn"
+                >
+                    Choose Image
+                </label>
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept="image/jpeg,image/jpg,image/png"
+                >
+
+                <div
+                    class="file-name"
+                    id="fileName"
+                >
+                    No image selected
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- PREVIEW -->
+        <div
+            class="preview-section"
+            id="previewSection"
+        >
+
+            <h3>
+                🖼️ Image Preview
+            </h3>
+
+            <div class="preview-container">
+
+                <img
+                    id="imagePreview"
+                    src=""
+                    alt="Leaf Preview"
+                >
+
+            </div>
+
+            <button
+                class="analyze-btn"
+                id="analyzeBtn"
+            >
+                🔍 Analyze Leaf
+            </button>
+
+        </div>
+
+
+        <!-- LOADING -->
+        <div
+            class="loading"
+            id="loading"
+        >
+
+            <div class="spinner"></div>
+
+            <p style="margin-top:15px;">
+                🤖 AI is analyzing the image...
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- RESULT -->
+    <div
+        class="card result"
+        id="result"
+    >
+
+        <div class="result-header">
+
+            <h2>
+                🌱 AI Result
+            </h2>
+
+            <p>
+                Disease detection completed.
+            </p>
+
+        </div>
+
+
+        <div class="result-grid">
+
+            <div class="result-box">
+
+                <span>
+                    🌾 Crop
+                </span>
+
+                <strong id="resultCrop">
+                    -
+                </strong>
+
+            </div>
+
+
+            <div class="result-box">
+
+                <span>
+                    🦠 Disease
+                </span>
+
+                <strong id="resultDisease">
+                    -
+                </strong>
+
+            </div>
+
+
+            <div class="result-box">
+
+                <span>
+                    📊 Confidence
+                </span>
+
+                <strong id="resultConfidence">
+                    -
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- SYMPTOMS -->
+        <div class="info-box">
+
+            <h3>
+                🩺 Symptoms
+            </h3>
+
+            <ul id="symptoms"></ul>
+
+        </div>
+
+
+        <!-- TREATMENT -->
+        <div class="info-box">
+
+            <h3>
+                💊 Treatment
+            </h3>
+
+            <ul id="treatment"></ul>
+
+        </div>
+
+
+        <!-- PREVENTION -->
+        <div class="info-box">
+
+            <h3>
+                🛡️ Prevention
+            </h3>
+
+            <ul id="prevention"></ul>
+
+        </div>
+
+    </div>
+
+
+    <div class="footer">
+        © 2026 Crop Disease Detection System
+    </div>
+
+</div>
+
+
+<script>
+
+    // =========================================
+    // CROP DATABASE
+    // =========================================
+
+    const cropData = {
+
+        Tomato: {
+
+            disease: "Early Blight",
+
+            confidence: "94%",
+
+            symptoms: [
+                "Brown circular spots on older leaves",
+                "Yellowing around infected areas",
+                "Leaves may dry and fall"
+            ],
+
+            treatment: [
+                "Remove severely infected leaves",
+                "Improve air circulation around plants",
+                "Use an appropriate disease-control product according to local recommendations"
+            ],
+
+            prevention: [
+                "Avoid overhead watering",
+                "Maintain proper spacing",
+                "Remove infected plant debris"
+            ]
+
+        },
+
+
+        Potato: {
+
+            disease: "Late Blight",
+
+            confidence: "93%",
+
+            symptoms: [
+                "Dark water-soaked spots on leaves",
+                "Brown or black lesions",
+                "Rapid drying of infected foliage"
+            ],
+
+            treatment: [
+                "Remove and destroy severely infected plant material",
+                "Improve field sanitation",
+                "Use recommended disease-control measures"
+            ],
+
+            prevention: [
+                "Use healthy planting material",
+                "Avoid prolonged leaf wetness",
+                "Maintain good field drainage"
+            ]
+
+        },
+
+
+        Corn: {
+
+            disease: "Northern Leaf Blight",
+
+            confidence: "91%",
+
+            symptoms: [
+                "Long grey or brown lesions on leaves",
+                "Leaf yellowing",
+                "Premature drying of leaves"
+            ],
+
+            treatment: [
+                "Remove heavily infected plant material",
+                "Use resistant varieties where available",
+                "Follow recommended disease management practices"
+            ],
+
+            prevention: [
+                "Practice crop rotation",
+                "Maintain field sanitation",
+                "Use healthy seed"
+            ]
+
+        },
+
+
+        Apple: {
+
+            disease: "Apple Scab",
+
+            confidence: "92%",
+
+            symptoms: [
+                "Olive-green or brown spots on leaves",
+                "Leaf deformation",
+                "Premature leaf drop"
+            ],
+
+            treatment: [
+                "Remove infected fallen leaves",
+                "Prune affected plant parts",
+                "Use appropriate disease-control measures"
+            ],
+
+            prevention: [
+                "Maintain orchard sanitation",
+                "Improve air circulation",
+                "Remove infected plant debris"
+            ]
+
+        },
+
+
+        Grape: {
+
+            disease: "Downy Mildew",
+
+            confidence: "90%",
+
+            symptoms: [
+                "Yellowish patches on leaves",
+                "White growth under infected leaves",
+                "Leaf drying in severe infection"
+            ],
+
+            treatment: [
+                "Remove severely infected leaves",
+                "Improve ventilation",
+                "Follow locally recommended disease management"
+            ],
+
+            prevention: [
+                "Maintain proper plant spacing",
+                "Avoid excessive leaf wetness",
+                "Keep vineyard clean"
+            ]
+
+        },
+
+
+        Chilli: {
+
+            disease: "Anthracnose",
+
+            confidence: "91%",
+
+            symptoms: [
+                "Dark lesions on leaves or fruits",
+                "Sunken spots",
+                "Drying of infected plant tissue"
+            ],
+
+            treatment: [
+                "Remove infected plant parts",
+                "Improve field sanitation",
+                "Use appropriate disease-control measures"
+            ],
+
+            prevention: [
+                "Use healthy planting material",
+                "Avoid overhead irrigation",
+                "Remove infected debris"
+            ]
+
+        },
+
+
+        Cucumber: {
+
+            disease: "Downy Mildew",
+
+            confidence: "90%",
+
+            symptoms: [
+                "Yellow angular spots on leaves",
+                "Leaf browning",
+                "Rapid decline of foliage"
+            ],
+
+            treatment: [
+                "Remove severely affected leaves",
+                "Improve air circulation",
+                "Follow recommended disease management practices"
+            ],
+
+            prevention: [
+                "Avoid prolonged leaf wetness",
+                "Maintain proper spacing",
+                "Keep the growing area clean"
+            ]
+
+        },
+
+
+        Brinjal: {
+
+            disease: "Bacterial Wilt",
+
+            confidence: "89%",
+
+            symptoms: [
+                "Sudden wilting of plants",
+                "Yellowing of leaves",
+                "Progressive plant decline"
+            ],
+
+            treatment: [
+                "Remove severely affected plants",
+                "Improve field sanitation",
+                "Follow locally recommended management practices"
+            ],
+
+            prevention: [
+                "Use healthy seedlings",
+                "Avoid waterlogged soil",
+                "Practice crop rotation"
+            ]
+
+        },
+
+
+        Mango: {
+
+            disease: "Anthracnose",
+
+            confidence: "92%",
+
+            symptoms: [
+                "Dark spots on leaves",
+                "Black lesions on plant parts",
+                "Leaf drying under severe infection"
+            ],
+
+            treatment: [
+                "Remove infected plant material",
+                "Prune affected portions",
+                "Follow recommended disease management"
+            ],
+
+            prevention: [
+                "Maintain orchard sanitation",
+                "Improve air circulation",
+                "Avoid prolonged moisture on foliage"
+            ]
+
+        },
+
+
+        Rice: {
+
+            disease: "Rice Blast",
+
+            confidence: "93%",
+
+            symptoms: [
+                "Spindle-shaped lesions on leaves",
+                "Brown or grey leaf spots",
+                "Reduced plant growth"
+            ],
+
+            treatment: [
+                "Remove heavily infected material where practical",
+                "Use resistant varieties",
+                "Follow recommended disease management"
+            ],
+
+            prevention: [
+                "Use healthy seed",
+                "Avoid excessive nitrogen",
+                "Maintain balanced crop nutrition"
+            ]
+
+        },
+
+
+        Wheat: {
+
+            disease: "Leaf Rust",
+
+            confidence: "91%",
+
+            symptoms: [
+                "Orange or reddish-brown pustules",
+                "Rust-colored spots on leaves",
+                "Premature leaf drying"
+            ],
+
+            treatment: [
+                "Use resistant varieties where available",
+                "Monitor crop regularly",
+                "Follow recommended disease-control practices"
+            ],
+
+            prevention: [
+                "Use healthy seed",
+                "Maintain field sanitation",
+                "Use resistant varieties"
+            ]
+
+        },
+
+
+        Soybean: {
+
+            disease: "Frogeye Leaf Spot",
+
+            confidence: "88%",
+
+            symptoms: [
+                "Circular spots on leaves",
+                "Dark margins around lesions",
+                "Premature leaf drop"
+            ],
+
+            treatment: [
+                "Remove infected crop residue where practical",
+                "Use appropriate disease management",
+                "Monitor the crop regularly"
+            ],
+
+            prevention: [
+                "Use healthy seed",
+                "Practice crop rotation",
+                "Maintain field sanitation"
+            ]
+
+        },
+
+
+        Onion: {
+
+            disease: "Purple Blotch",
+
+            confidence: "89%",
+
+            symptoms: [
+                "Small white lesions on leaves",
+                "Purple or brown spots",
+                "Leaf drying from infected areas"
+            ],
+
+            treatment: [
+                "Remove severely infected leaves",
+                "Improve air circulation",
+                "Follow recommended disease management"
+            ],
+
+            prevention: [
+                "Avoid excessive leaf moisture",
+                "Maintain proper spacing",
+                "Remove infected plant debris"
+            ]
+
+        },
+
+
+        Cotton: {
+
+            disease: "Bacterial Blight",
+
+            confidence: "90%",
+
+            symptoms: [
+                "Dark leaf spots",
+                "Leaf blight",
+                "Premature leaf drop in severe cases"
+            ],
+
+            treatment: [
+                "Remove severely affected plant material",
+                "Maintain field hygiene",
+                "Follow locally recommended management practices"
+            ],
+
+            prevention: [
+                "Use healthy seed",
+                "Use suitable resistant varieties",
+                "Practice crop rotation"
+            ]
+
+        },
+
+
+        Banana: {
+
+            disease: "Sigatoka Leaf Spot",
+
+            confidence: "91%",
+
+            symptoms: [
+                "Small brown streaks on leaves",
+                "Dark leaf spots",
+                "Large areas of leaf drying"
+            ],
+
+            treatment: [
+                "Remove severely infected leaves",
+                "Improve plantation sanitation",
+                "Follow recommended disease management"
+            ],
+
+            prevention: [
+                "Maintain proper plant spacing",
+                "Remove infected leaf debris",
+                "Maintain good plantation hygiene"
+            ]
+
+        }
+
+    };
+
+
+    // =========================================
+    // ELEMENTS
+    // =========================================
+
+    const fileInput =
+        document.getElementById("fileInput");
+
+    const uploadArea =
+        document.getElementById("uploadArea");
+
+    const fileName =
+        document.getElementById("fileName");
+
+    const previewSection =
+        document.getElementById("previewSection");
+
+    const imagePreview =
+        document.getElementById("imagePreview");
+
+    const analyzeBtn =
+        document.getElementById("analyzeBtn");
+
+    const loading =
+        document.getElementById("loading");
+
+    const result =
+        document.getElementById("result");
+
+    const cropSelect =
+        document.getElementById("cropSelect");
+
+
+    let selectedFile = null;
+
+
+    // =========================================
+    // UPLOAD AREA CLICK
+    // =========================================
+
+    uploadArea.addEventListener("click", function(e) {
+
+        if (e.target.tagName !== "LABEL") {
+
+            fileInput.click();
+
+        }
+
+    });
+
+
+    // =========================================
+    // FILE SELECT
+    // =========================================
+
+    fileInput.addEventListener("change", function() {
+
+        if (this.files.length > 0) {
+
+            handleFile(this.files[0]);
+
+        }
+
+    });
+
+
+    // =========================================
+    // DRAG OVER
+    // =========================================
+
+    uploadArea.addEventListener("dragover", function(e) {
+
+        e.preventDefault();
+
+        uploadArea.classList.add("dragover");
+
+    });
+
+
+    // =========================================
+    // DRAG LEAVE
+    // =========================================
+
+    uploadArea.addEventListener("dragleave", function() {
+
+        uploadArea.classList.remove("dragover");
+
+    });
+
+
+    // =========================================
+    // DROP
+    // =========================================
+
+    uploadArea.addEventListener("drop", function(e) {
+
+        e.preventDefault();
+
+        uploadArea.classList.remove("dragover");
+
+        if (e.dataTransfer.files.length > 0) {
+
+            handleFile(e.dataTransfer.files[0]);
+
+        }
+
+    });
+
+
+    // =========================================
+    // HANDLE FILE
+    // =========================================
+
+    function handleFile(file) {
+
+        const allowedTypes = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png"
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+
+            alert("Please upload JPG, JPEG or PNG image.");
+
+            return;
+
+        }
+
+
+        selectedFile = file;
+
+        fileName.textContent =
+            "Selected: " + file.name;
+
+
+        const imageURL =
+            URL.createObjectURL(file);
+
+
+        imagePreview.src = imageURL;
+
+
+        imagePreview.onload = function() {
+
+            URL.revokeObjectURL(imageURL);
+
+        };
+
+
+        previewSection.style.display = "block";
+
+        result.style.display = "none";
+
+    }
+
+
+    // =========================================
+    // ANALYZE
+    // =========================================
+
+    analyzeBtn.addEventListener("click", function() {
+
+        if (!selectedFile) {
+
+            alert("Please upload a leaf image first.");
+
+            return;
+
+        }
+
+
+        const selectedCrop =
+            cropSelect.value;
+
+
+        const data =
+            cropData[selectedCrop];
+
+
+        if (!data) {
+
+            alert("Crop information not available.");
+
+            return;
+
+        }
+
+
+        // Hide old result
+        result.style.display = "none";
+
+
+        // Show loading
+        loading.style.display = "block";
+
+        analyzeBtn.disabled = true;
+
+
+        // Demo processing
+        setTimeout(function() {
+
+
+            // =================================
+            // CROP
+            // =================================
+
+            document.getElementById("resultCrop")
+                .textContent = selectedCrop;
+
+
+            // =================================
+            // DISEASE
+            // =================================
+
+            document.getElementById("resultDisease")
+                .textContent = data.disease;
+
+
+            // =================================
+            // CONFIDENCE
+            // =================================
+
+            document.getElementById("resultConfidence")
+                .textContent = data.confidence;
+
+
+            // =================================
+            // SYMPTOMS
+            // =================================
+
+            const symptoms =
+                document.getElementById("symptoms");
+
+            symptoms.innerHTML = "";
+
+
+            data.symptoms.forEach(function(item) {
+
+                const li =
+                    document.createElement("li");
+
+                li.textContent = item;
+
+                symptoms.appendChild(li);
+
+            });
+
+
+            // =================================
+            // TREATMENT
+            // =================================
+
+            const treatment =
+                document.getElementById("treatment");
+
+            treatment.innerHTML = "";
+
+
+            data.treatment.forEach(function(item) {
+
+                const li =
+                    document.createElement("li");
+
+                li.textContent = item;
+
+                treatment.appendChild(li);
+
+            });
+
+
+            // =================================
+            // PREVENTION
+            // =================================
+
+            const prevention =
+                document.getElementById("prevention");
+
+            prevention.innerHTML = "";
+
+
+            data.prevention.forEach(function(item) {
+
+                const li =
+                    document.createElement("li");
+
+                li.textContent = item;
+
+                prevention.appendChild(li);
+
+            });
+
+
+            // =================================
+            // SHOW RESULT
+            // =================================
+
+            loading.style.display = "none";
+
+            result.style.display = "block";
+
+            analyzeBtn.disabled = false;
+
+
+            // Scroll to result
+            result.scrollIntoView({
+                behavior: "smooth"
+            });
+
+
+        }, 1500);
+
+    });
+
+</script>
+
+</body>
+</html>
